@@ -13,7 +13,7 @@
 export TG_NON_INTERACTIVE=true
 
 apply () {
-  terragrunt run-all apply
+  terragrunt run --all apply
 }
 
 destroy () {
