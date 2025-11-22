@@ -12,10 +12,18 @@ locals {
 
 dependency "primary_service_a" {
   config_path = find_in_parent_folders("us-east-1/03-applications/service-a")
+  mock_outputs = {
+    service_url = "primary-service-a-dev.automata-labs.nl"
+    alb_zone_id = "Z35SXDOTRQ7X7K"  # Example ALB zone ID for us-east-1
+  }
 }
 
 dependency "dr_service_a" {
   config_path = find_in_parent_folders("us-west-1/03-applications/service-a")
+  mock_outputs = {
+    service_url = "dr-service-a-dev.automata-labs.nl"
+    alb_zone_id = "Z1H1FL5HABSF5"  # Example ALB zone ID for us-west-1
+  }
 }
 
 inputs = {
