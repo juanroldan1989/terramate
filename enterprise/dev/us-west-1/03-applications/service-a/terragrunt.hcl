@@ -13,10 +13,18 @@ locals {
 
 dependency "networking" {
   config_path = find_in_parent_folders("01-networking/vpc-1")
+  mock_outputs = {
+    vpc_id                = "vpc-12345678"
+    private_subnet_ids    = ["subnet-11111111", "subnet-22222222"]
+    public_subnet_ids     = ["subnet-33333333", "subnet-44444444"]
+  }
 }
 
 dependency "cluster" {
   config_path = find_in_parent_folders("02-compute/ecs-clusters/cluster-1")
+  mock_outputs = {
+    cluster_id = "arn:aws:ecs:us-west-1:123456789012:cluster/cluster-1"
+  }
 }
 
 inputs = {
