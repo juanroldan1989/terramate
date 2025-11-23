@@ -1,0 +1,105 @@
+# https://terramate.io/docs/cli/automation/github-actions/drift-check-workflow
+name: On-Demand/Scheduled Drift Detection
+
+on:
+  # schedule:
+  #   - cron: '0 2 * * *' # Runs daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  drift-detection:
+    name: Check Drift
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      checks: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Terramate
+        uses: terramate-io/terramate-action@v3
+        with:
+          version: "0.14.0"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.83.2
+          token: ${{ github.token }}
+
+      - name: Configure AWS credentials via OIDC
+        id: auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1 # or create a matrix if you want to run in multiple regions
+          role-to-assume: arn:aws:iam::542979624611:role/GitHubActions-TerramateRole
+
+      - name: Initialize Terragrunt
+        id: init
+        run: |
+          terramate run \
+           --parallel 1 \
+           -- \
+           terragrunt init --terragrunt-non-interactive -lock-timeout=5m
+        env:
+          AWS_ACCOUNT_ID: "542979624611"
+
+      - name: Check for uncommitted files
+        run: |
+          git add .
+          git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
+
+      - name: Run drift detection
+        id: drift
+        run: |
+          terramate run \
+            --parallel 5 \
+            --sync-drift-status \
+            --continue-on-error \
+            --terraform-plan-file=drift.tfplan \
+            --terragrunt \
+            -- \
+            terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AWS_ACCOUNT_ID: "542979624611"
+
+      # # Optional step to reconcile (apply) the drifted stacks
+      # # This only applies to stack with a `reconcile` tag by default
+      # # Uncomment if desired
+      # - name: Check for auto reconcile
+      #   id: find-drifted
+      #   run: |
+      #     terramate list \
+      #       --status=drifted \
+      #       --tags reconcile
+      #
+      # - name: Drift reconciliation
+      #   id: drift-reconcile
+      #   if: steps.find-drifted.outputs.stdout
+      #   run: |
+      #     terramate run \
+      #       --status=drifted \
+      #       --tags reconcile \
+      #       --parallel 5 \
+      #       --sync-deployment \
+      #       --terraform-plan-file=drift.tfplan \
+      #       --terragrunt \
+      #       -- \
+      #       terragrunt apply -input=false -auto-approve -lock-timeout=5m drift.tfplan
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
