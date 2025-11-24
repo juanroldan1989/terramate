@@ -1,0 +1,113 @@
+name: Preview Infra Changes
+
+on:
+  pull_request:
+
+jobs:
+  preview:
+    name: Preview Infrastructure Changes
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      checks: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Terramate
+        uses: terramate-io/terramate-action@v3
+        with:
+          version: "0.14.0"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.83.2
+          token: ${{ github.token }}
+
+      - name: Check Terramate formatting
+        run: terramate fmt --check
+
+      - name: Check Terragrunt formatting
+        run: terramate run -- terragrunt fmt
+
+      - name: List changed stacks
+        id: list
+        run: terramate list --changed
+
+      - name: Configure AWS credentials via OIDC
+        if: steps.list.outputs.stdout
+        id: auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1 # or create a matrix if you want to run in multiple regions
+          role-to-assume: arn:aws:iam::542979624611:role/GitHubActions-TerramateRole
+
+      - name: Initialize Terragrunt in changed stacks
+        if: steps.list.outputs.stdout
+        id: init
+        run: |
+          terramate run \
+           --parallel 1 \
+           --changed \
+           -- \
+           terragrunt init -lock-timeout=5m
+        env:
+          AWS_ACCOUNT_ID: "542979624611"
+
+      - name: Validate Terragrunt configuration in changed stacks
+        if: steps.list.outputs.stdout
+        id: validate
+        run: |
+          terramate run \
+            --parallel 5 \
+            --changed \
+            -- \
+            terragrunt validate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AWS_ACCOUNT_ID: "542979624611"
+
+      - name: Plan Terragrunt changes in changed stacks
+        if: steps.list.outputs.stdout
+        id: plan
+        run: |
+          terramate run \
+            --parallel 5 \
+            --changed \
+            --sync-preview \
+            --terraform-plan-file=out.tfplan \
+            --terragrunt \
+            --continue-on-error \
+            -- \
+            terragrunt plan -out out.tfplan -detailed-exitcode -lock=false
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AWS_ACCOUNT_ID: "542979624611"
+
+      # - name: Post PR comment with plan results
+      #   if: steps.list.outputs.stdout
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   with:
+      #     token: ${{ github.token }}
+      #     header: "## :terraform: Terragrunt Preview"
+      #     message: |
+      #       ```markdown
+      #       ${{ steps.plan.outputs.stdout }}
+      #       ```
+      #     recreate: true
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #     AWS_ACCOUNT_ID: "542979624611"
