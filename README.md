@@ -102,6 +102,8 @@ terramate run \
   -- terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
 ```
 
+![alt text](<screenshots/stacks.png>)
+
 - The easiest way to sync your stacks is to run a drift detection workflow in all stacks and sync the result to Terramate Cloud.
 
 - The command above runs a `terragrunt plan` in all your stacks and sends the result to Terramate Cloud.
