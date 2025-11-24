@@ -18,6 +18,10 @@ jobs:
       pull-requests: read
       checks: read
 
+    env:
+      AWS_ACCOUNT_ID: "542979624611"
+      GITHUB_TOKEN: ${{ github.token }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,9 +59,8 @@ jobs:
            --parallel 1 \
            -- \
            terragrunt init --terragrunt-non-interactive -lock-timeout=5m
-        env:
-          AWS_ACCOUNT_ID: "542979624611"
 
+      # To avoid error due to uncommitted files from previous steps
       - name: Check for uncommitted files
         run: |
           git add .
@@ -74,9 +77,6 @@ jobs:
             --terragrunt \
             -- \
             terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AWS_ACCOUNT_ID: "542979624611"
 
       # # Optional step to reconcile (apply) the drifted stacks
       # # This only applies to stack with a `reconcile` tag by default
@@ -101,5 +101,3 @@ jobs:
       #       --terragrunt \
       #       -- \
       #       terragrunt apply -input=false -auto-approve -lock-timeout=5m drift.tfplan
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
