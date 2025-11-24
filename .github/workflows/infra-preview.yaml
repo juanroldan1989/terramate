@@ -14,6 +14,10 @@ jobs:
       pull-requests: write
       checks: read
 
+    env:
+      AWS_ACCOUNT_ID: "542979624611"
+      GITHUB_TOKEN: ${{ github.token }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,6 +41,13 @@ jobs:
           terragrunt-version: 0.83.2
           token: ${{ github.token }}
 
+      - name: Configure AWS credentials via OIDC
+        id: auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1 # or create a matrix if you want to run in multiple regions
+          role-to-assume: arn:aws:iam::542979624611:role/GitHubActions-TerramateRole
+
       - name: Check Terramate formatting
         run: terramate fmt --check
 
@@ -47,13 +58,11 @@ jobs:
         id: list
         run: terramate list --changed
 
-      - name: Configure AWS credentials via OIDC
-        if: steps.list.outputs.stdout
-        id: auth
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: us-east-1 # or create a matrix if you want to run in multiple regions
-          role-to-assume: arn:aws:iam::542979624611:role/GitHubActions-TerramateRole
+      # To avoid error due to uncommitted files from previous steps
+      - name: Check for uncommitted files
+        run: |
+          git add .
+          git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
 
       - name: Initialize Terragrunt in changed stacks
         if: steps.list.outputs.stdout
@@ -64,8 +73,6 @@ jobs:
            --changed \
            -- \
            terragrunt init -lock-timeout=5m
-        env:
-          AWS_ACCOUNT_ID: "542979624611"
 
       - name: Validate Terragrunt configuration in changed stacks
         if: steps.list.outputs.stdout
@@ -76,9 +83,6 @@ jobs:
             --changed \
             -- \
             terragrunt validate
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AWS_ACCOUNT_ID: "542979624611"
 
       - name: Plan Terragrunt changes in changed stacks
         if: steps.list.outputs.stdout
@@ -93,9 +97,6 @@ jobs:
             --continue-on-error \
             -- \
             terragrunt plan -out out.tfplan -detailed-exitcode -lock=false
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AWS_ACCOUNT_ID: "542979624611"
 
       # - name: Post PR comment with plan results
       #   if: steps.list.outputs.stdout
@@ -108,6 +109,3 @@ jobs:
       #       ${{ steps.plan.outputs.stdout }}
       #       ```
       #     recreate: true
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #     AWS_ACCOUNT_ID: "542979624611"
