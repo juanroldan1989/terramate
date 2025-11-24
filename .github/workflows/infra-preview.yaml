@@ -41,7 +41,7 @@ jobs:
         run: terramate fmt --check
 
       - name: Check Terragrunt formatting
-        run: terramate run -- terragrunt fmt
+        run: terragrunt fmt --terragrunt-check
 
       - name: List changed stacks
         id: list
