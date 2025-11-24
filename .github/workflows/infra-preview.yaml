@@ -1,3 +1,4 @@
+# https://terramate.io/docs/cli/automation/github-actions/preview-workflow
 name: Preview Infra Changes
 
 on:
