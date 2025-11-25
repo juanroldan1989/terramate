@@ -205,6 +205,37 @@ aws iam put-role-policy \
 
 **Note:** Replace `YOUR_ACCOUNT_ID` and `YOUR_GITHUB_USERNAME` with your actual AWS account ID and GitHub username.
 
+## Github Action Workflows
+
+1. Infrastructure provisioned.
+2. Pull Request is created adjusting ECS Service.
+3. Terramate shows "Preview" of changes:
+
+![alt text](<screenshots/github-pull-request-preview.png>)
+
+3. Terramate Cloud also shows "Preview" of changes:
+
+![alt text](<screenshots/terramate-pull-request-preview.png>)
+
+![alt text](<screenshots/terramate-pull-request-preview-ascii.png>)
+
+4. PR is reviewed, approved and merged:
+
+![alt text](<screenshots/pull-request-merged.png>)
+
+5. Infrastructure changes are provisioned via Github Action workflow:
+
+![alt text](<screenshots/github-provision-infra.png>)
+
+### Variation
+
+1. Infrastructure provisioned.
+2. ECS Service is adjusted via ClickOps.
+3. "Drift Detection" workflow is triggered (on-demand / every 1 hour).
+4. Terramate Cloud shows ECS Service as "drifted" resource:
+
+![alt text](<screenshots/terramate-detects-drifted-resource.png>)
+
 ## Docs
 
 https://terramate.io/docs/cli/on-boarding/terragrunt
