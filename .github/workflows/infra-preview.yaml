@@ -1,12 +1,11 @@
 # https://terramate.io/docs/cli/automation/github-actions/preview-workflow
-name: Infrastructure Changes
+name: Infra Changes Preview
 
 on:
   pull_request:
 
 jobs:
   preview:
-    name: Preview
     runs-on: ubuntu-latest
 
     permissions:

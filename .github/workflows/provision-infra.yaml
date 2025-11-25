@@ -1,5 +1,5 @@
 # https://terramate.io/docs/cli/automation/github-actions/deployment-workflow
-name: Infrastructure Changes
+name: Provision Infrastructure
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   deploy:
-    name: Provision
     runs-on: ubuntu-latest
 
     permissions:
