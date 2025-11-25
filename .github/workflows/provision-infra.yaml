@@ -64,6 +64,12 @@ jobs:
             -- \
             terragrunt init
 
+      # To avoid error due to uncommitted files from previous steps
+      - name: Check for uncommitted files
+        run: |
+          git add .
+          git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
+
       - name: Create Terragrunt plan on changed stacks
         if: steps.list.outputs.stdout
         id: plan
