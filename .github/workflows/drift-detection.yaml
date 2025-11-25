@@ -1,5 +1,5 @@
 # https://terramate.io/docs/cli/automation/github-actions/drift-check-workflow
-name: On-Demand/Scheduled Drift Detection
+name: Infrastructure Changes
 
 on:
   # schedule:
@@ -8,9 +8,19 @@ on:
 
 jobs:
   drift-detection:
-    name: Check Drift
+    name: Drift Detection
 
     runs-on: ubuntu-latest
+
+    # https://github.com/terramate-io/terramate-quickstart-aws/blob/main/.github/workflows/deploy.yml
+    # strategy:
+    #   fail-fast: false # Let other stacks finish even if one fails.
+    #   matrix:
+    #     include:
+    #       - env: stg
+    #         account_id: 381492264542
+    #       - env: prd
+    #         account_id: 955425229529
 
     permissions:
       id-token: write
