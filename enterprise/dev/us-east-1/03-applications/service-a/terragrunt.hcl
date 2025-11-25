@@ -41,4 +41,5 @@ inputs = {
   service_name   = "service-a"
   app_name       = "app-a"
   container_name = "app-a"
+  desired_count  = 3
 }
