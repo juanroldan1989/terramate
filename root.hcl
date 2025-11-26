@@ -39,6 +39,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = "${local.env}"
+      Region      = "${local.aws_region}"
       CostCenter  = "AWS Billing"
       ManagedBy   = "Terraform"
       Owner       = "Platform Team"
