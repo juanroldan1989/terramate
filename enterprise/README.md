@@ -73,7 +73,7 @@ enterprise/prod/eu-central-1/
 ### 1. Root Configuration
 
 ```bash
-# enterprise/terragrunt.hcl
+# enterprise/root.hcl
 remote_state {
   backend = "s3"
   generate = {
@@ -178,10 +178,6 @@ inputs = {
 ```
 
 ## Scaling Best Practices
-
-### For Hundreds of Components
-
-...
 
 ### Performance Optimization
 1. **Parallel deployments**: Independent component deployment
