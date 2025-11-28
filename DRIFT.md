@@ -53,11 +53,11 @@ This repository implements a comprehensive drift detection strategy using Terram
 
 ![alt text](<screenshots/terramate-detects-drifted-resource.png>)
 
-### Drift Detection Workflows
+## Drift Detection Workflows
 
-Our infrastructure implements a **hybrid environment-based approach with region matrices** for comprehensive drift detection across multiple environments and regions:
+This infrastructure implements a **hybrid environment-based approach with region matrices** for comprehensive drift detection across multiple environments and regions:
 
-#### Environment-Specific Workflows
+### Environment-Specific Workflows
 
 1. **`drift-detection/prod.yaml`** - Critical production infrastructure
    - **Schedule**: Every 6 hours (`0 */6 * * *`)

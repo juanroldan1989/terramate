@@ -1,30 +1,38 @@
 # Enterprise Infrastructure Management
 
-This repository demonstrates:
-
-1. **Enterprise-Grade** infrastructure provisioning using a comprehensive stack of modern Infrastructure as Code (IaC) tools:
-
-- Terraform modules
-
-- Terragrunt framework
-
-- Terramate for streamlined CI/CD pipeline integration.
-
-2. **Disaster Recovery** capabilities with cross-region failover mechanisms, ensuring high availability and business continuity for mission-critical services (demonstrated through ECS Service "A") across all environment (DEV, TEST, PROD).
-
-## Architecture Overview
-
 This project implements a structured enterprise infrastructure configuration following the hierarchy:
 
 ```
 environments → regions → infrastructure layers → components
 ```
 
-**Key Components:**
+## Key Components
 
 - **Terraform Modules**: Reusable infrastructure components sourced from the [infra-modules](https://github.com/juanroldan1989/infra-modules) repository
 - **Terragrunt Framework**: Handles environment configuration and orchestrates infrastructure provisioning
 - **Terramate**: Provides advanced stack management and CI/CD integration capabilities
+
+## Documentation
+- **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt, and Terraform
+- **[Drift Detection Strategy](DRIFT.md)** - Comprehensive drift monitoring across environments and regions
+- **[Disaster Recovery Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
+
+## Infrastructure
+- **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
+  - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
+  - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
+  - **[Production](enterprise/prod/)** - EU production infrastructure (eu-central-1)
+
+## Automation & CI/CD
+- **[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
+  - **[Infrastructure Preview](.github/workflows/infra-preview.yaml)** - PR-based change validation
+  - **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
+  - **[Drift Detection Workflows](.github/workflows/drift-detection/)** - Multi-environment drift monitoring
+
+## Configuration
+- **[Terramate Configuration](terramate.tm.hcl)** - Stack management and orchestration
+- **[Root Configuration](root.hcl)** - Shared Terragrunt configuration and AWS provider setup
+- **[Bootstrap Scripts](bootstrap/)** - Initial infrastructure setup utilities
 
 ## Provision infrastructure
 
@@ -139,6 +147,26 @@ terramate run \
 
 - This works because Terramate CLI extracts data such as metadata, resources, Git metadata, and more from the created plans and the environment in which it's running, sanitizes it locally and syncs the result to Terramate Cloud. **This makes Terramate extremely secure** since no sensitive information, such as credentials or certificates, will ever be synced to Terramate Cloud.
 
-## Docs
+## Contributing
 
-https://terramate.io/docs/cli/on-boarding/terragrunt
+Contributions are welcomed to this open source project!
+
+### How to Contribute
+
+1. **Fork the repository** and create a feature branch
+2. **Make your changes** following the existing code style and patterns
+3. **Test thoroughly** - Ensure your changes work across different environments
+4. **Submit a pull request** with a clear description of your changes
+5. **Participate in code review** - Address feedback and collaborate on improvements
+
+### Getting Help
+
+- 📖 Check the [documentation](README.md#sync-stacks-on-terramate---steps) for setup and usage guides
+- 🐛 [Open an issue](https://github.com/juanroldan1989/terramate/issues) for bug reports or feature requests
+- 💬 Start a [discussion](https://github.com/juanroldan1989/terramate/discussions) for questions or ideas
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+
+The MIT License is a permissive license that allows you to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, provided that the above copyright notice and this permission notice appear in all copies.
