@@ -1,13 +1,11 @@
-# https://terramate.io/docs/cli/automation/github-actions/deployment-workflow
-name: Provision Infrastructure
+# https://terramate.io/docs/cli/automation/github-actions/drift-check-workflow
+name: Drift Detection - On Demand
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  drift-detection:
     runs-on: ubuntu-latest
 
     permissions:
@@ -50,19 +48,13 @@ jobs:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
 
-      - name: List changed stacks
-        id: list
-        run: terramate list --changed
-
-      - name: Run Terragrunt init in each changed stacks
-        if: steps.list.outputs.stdout
+      - name: Initialize Terragrunt
         id: init
         run: |
           terramate run \
-            --parallel 1 \
-            --changed \
-            -- \
-            terragrunt init
+           --parallel 1 \
+           -- \
+           terragrunt init --terragrunt-non-interactive -lock-timeout=5m
 
       # To avoid error due to uncommitted files from previous steps
       - name: Check for uncommitted files
@@ -70,39 +62,38 @@ jobs:
           git add .
           git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
 
-      - name: Create Terragrunt plan on changed stacks
-        if: steps.list.outputs.stdout
-        id: plan
-        run: |
-          terramate run \
-            --parallel 5 \
-            --changed \
-            -- \
-            terragrunt plan -lock-timeout=5m -out out.tfplan
-
-      - name: Apply planned changes on changed stacks
-        if: steps.list.outputs.stdout
-        id: apply
-        run: |
-          terramate run \
-            --parallel 5 \
-            --changed \
-            --sync-deployment \
-            --terraform-plan-file=out.tfplan \
-            --terragrunt \
-            -- \
-            terragrunt apply -input=false -auto-approve -lock-timeout=5m out.tfplan
-
       - name: Run drift detection
-        if: steps.list.outputs.stdout && ! cancelled() && steps.apply.outcome != 'skipped'
         id: drift
         run: |
           terramate run \
             --parallel 5 \
-            --changed \
             --sync-drift-status \
             --continue-on-error \
             --terraform-plan-file=drift.tfplan \
             --terragrunt \
             -- \
-            terragrunt plan -out drift.tfplan -detailed-exitcode
+            terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
+
+      # # Optional step to reconcile (apply) the drifted stacks
+      # # This only applies to stack with a `reconcile` tag by default
+      # # Uncomment if desired
+      # - name: Check for auto reconcile
+      #   id: find-drifted
+      #   run: |
+      #     terramate list \
+      #       --status=drifted \
+      #       --tags reconcile
+      #
+      # - name: Drift reconciliation
+      #   id: drift-reconcile
+      #   if: steps.find-drifted.outputs.stdout
+      #   run: |
+      #     terramate run \
+      #       --status=drifted \
+      #       --tags reconcile \
+      #       --parallel 5 \
+      #       --sync-deployment \
+      #       --terraform-plan-file=drift.tfplan \
+      #       --terragrunt \
+      #       -- \
+      #       terragrunt apply -input=false -auto-approve -lock-timeout=5m drift.tfplan

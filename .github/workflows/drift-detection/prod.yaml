@@ -1,24 +1,18 @@
-# https://terramate.io/docs/cli/automation/github-actions/drift-check-workflow
-name: Drift Detection
+name: Drift Detection - Production
 
 on:
-  # schedule:
-  #   - cron: '0 2 * * *' # Runs daily at 2 AM UTC
-  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *' # Runs every 6 hours
 
 jobs:
-  drift-detection:
+  prod-drift:
     runs-on: ubuntu-latest
-
-    # https://github.com/terramate-io/terramate-quickstart-aws/blob/main/.github/workflows/deploy.yml
-    # strategy:
-    #   fail-fast: false # Let other stacks finish even if one fails.
-    #   matrix:
-    #     include:
-    #       - env: stg
-    #         account_id: 381492264542
-    #       - env: prd
-    #         account_id: 955425229529
+    strategy:
+      fail-fast: false # Let other stacks finish even if one fails.
+      matrix:
+        region:
+          - eu-central-1
+          - eu-west-1
 
     permissions:
       id-token: write
@@ -27,7 +21,7 @@ jobs:
       checks: read
 
     env:
-      AWS_ACCOUNT_ID: "542979624611"
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       GITHUB_TOKEN: ${{ github.token }}
 
     steps:
@@ -57,8 +51,8 @@ jobs:
         id: auth
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: us-east-1 # or create a matrix if you want to run in multiple regions
-          role-to-assume: arn:aws:iam::542979624611:role/GitHubActions-TerramateRole
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
 
       - name: Initialize Terragrunt
         id: init
@@ -78,34 +72,11 @@ jobs:
         id: drift
         run: |
           terramate run \
-            --parallel 5 \
+            --parallel 8 \
             --sync-drift-status \
             --continue-on-error \
+            --tags Environment:prod,Region:${{ matrix.region }} \
             --terraform-plan-file=drift.tfplan \
             --terragrunt \
             -- \
             terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
-
-      # # Optional step to reconcile (apply) the drifted stacks
-      # # This only applies to stack with a `reconcile` tag by default
-      # # Uncomment if desired
-      # - name: Check for auto reconcile
-      #   id: find-drifted
-      #   run: |
-      #     terramate list \
-      #       --status=drifted \
-      #       --tags reconcile
-      #
-      # - name: Drift reconciliation
-      #   id: drift-reconcile
-      #   if: steps.find-drifted.outputs.stdout
-      #   run: |
-      #     terramate run \
-      #       --status=drifted \
-      #       --tags reconcile \
-      #       --parallel 5 \
-      #       --sync-deployment \
-      #       --terraform-plan-file=drift.tfplan \
-      #       --terragrunt \
-      #       -- \
-      #       terragrunt apply -input=false -auto-approve -lock-timeout=5m drift.tfplan

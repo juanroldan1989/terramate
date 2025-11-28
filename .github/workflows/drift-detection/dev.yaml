@@ -1,17 +1,25 @@
-# https://terramate.io/docs/cli/automation/github-actions/preview-workflow
-name: Infra Changes Preview
+# https://terramate.io/docs/cli/automation/github-actions/drift-check-workflow
+# https://github.com/terramate-io/terramate-quickstart-aws/blob/main/.github/workflows/deploy.yml
+name: Drift Detection - Development
 
 on:
-  pull_request:
+  schedule:
+    - cron: '0 2 * * 1,3,5' # Runs every Monday, Wednesday, and Friday at 2 AM UTC
 
 jobs:
-  preview:
+  dev-drift:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Let other stacks finish even if one fails.
+      matrix:
+        region:
+          - us-east-1
+          - us-west-1
 
     permissions:
       id-token: write
       contents: read
-      pull-requests: write
+      pull-requests: read
       checks: read
 
     env:
@@ -48,15 +56,13 @@ jobs:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
 
-      - name: Check Terramate formatting
-        run: terramate fmt --check
-
-      - name: Check Terragrunt formatting
-        run: terramate run -- terragrunt run -- fmt
-
-      - name: List changed stacks
-        id: list
-        run: terramate list --changed
+      - name: Initialize Terragrunt
+        id: init
+        run: |
+          terramate run \
+           --parallel 1 \
+           -- \
+           terragrunt init --terragrunt-non-interactive -lock-timeout=5m
 
       # To avoid error due to uncommitted files from previous steps
       - name: Check for uncommitted files
@@ -64,36 +70,15 @@ jobs:
           git add .
           git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
 
-      - name: Initialize Terragrunt in changed stacks
-        if: steps.list.outputs.stdout
-        id: init
+      - name: Run drift detection
+        id: drift
         run: |
           terramate run \
-           --parallel 1 \
-           --changed \
-           -- \
-           terragrunt init -lock-timeout=5m
-
-      - name: Validate Terragrunt configuration in changed stacks
-        if: steps.list.outputs.stdout
-        id: validate
-        run: |
-          terramate run \
-            --parallel 5 \
-            --changed \
-            -- \
-            terragrunt validate
-
-      - name: Plan Terragrunt changes in changed stacks
-        if: steps.list.outputs.stdout
-        id: plan
-        run: |
-          terramate run \
-            --parallel 5 \
-            --changed \
-            --sync-preview \
-            --terraform-plan-file=out.tfplan \
-            --terragrunt \
+            --parallel 8 \
+            --sync-drift-status \
             --continue-on-error \
+            --tags Environment:dev,Region:${{ matrix.region }} \
+            --terraform-plan-file=drift.tfplan \
+            --terragrunt \
             -- \
-            terragrunt plan -out out.tfplan -detailed-exitcode -lock=false
+            terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
