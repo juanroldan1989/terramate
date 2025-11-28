@@ -1,6 +1,6 @@
 # Enterprise Infrastructure Management
 
-Multi-region & multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
+Multi-region & multi-account enterprise infrastructure designed for scaling to hundreds of components. The architecture implements a three-tier infrastructure model (networking, compute, applications) with automated drift detection, CI/CD pipelines and cross-regional failover capabilities.
 
 ## Folder Structure
 
@@ -10,7 +10,7 @@ enterprise/
 │   ├── account.hcl               # AWS account configuration
 │   ├── global/                   # Global/cross-region resources
 │   │   ├── region.hcl              # Global region settings
-│   │   └── failover/               # Disaster recovery configuration
+│   │   └── failover/               # Cross-region failover configuration
 │   │
 │   ├── us-east-1/              # Primary US region
 │   │   ├── region.hcl            # Region-specific settings
@@ -26,11 +26,12 @@ enterprise/
 │
 ├── qa/                         # QA/Testing Environment
 │   ├── account.hcl               # AWS account configuration
-│   └── eu-west-1/                # EU testing region
+│   └── eu-south-1/               # EU testing region
 │       ├── region.hcl              # Region-specific settings
 │       ├── 01-networking/          # VPC, subnets, security groups
 │       ├── 02-compute/             # ECS clusters, EKS clusters
 │       └── 03-applications/        # Application services
+│   ...
 │
 ├── prod/                       # Production Environment
 │   ├── account.hcl               # AWS account configuration
@@ -39,10 +40,11 @@ enterprise/
 │       ├── 01-networking/          # VPC, subnets, security groups
 │       ├── 02-compute/             # ECS clusters, EKS clusters
 │       └── 03-applications/        # Application services
+│   ...
 │
 ├── scripts/                    # Utility scripts
-│   └── dr-test.sh                # Disaster recovery testing
-├── DR.md                       # Disaster recovery documentation
+│   └── dr-test.sh                # Failover testing
+├── DR.md                       # Failover switch documentation
 └── README.md                   # Enterprise documentation
 ```
 
@@ -60,15 +62,15 @@ enterprise/
 
 ## Documentation
 - **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt and Terraform
-- **[Drift Detection Strategy](DRIFT.md)** - Comprehensive drift monitoring across environments and regions
-- **[Disaster Recovery Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
+- **[Drift Detection Strategy](zdocs/DRIFT.md)** - Comprehensive drift monitoring across environments and regions
+- **[Failover Support Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
 
 ## Infrastructure
 - **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
   - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
   - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
   - **[Production](enterprise/prod/)** - EU production infrastructure (eu-central-1)
-- **[Architecture Overview](ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
+- **[Architecture Overview](zdocs/ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components.
 
 ## Automation & CI/CD
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
@@ -83,52 +85,82 @@ enterprise/
 
 ## Provision infrastructure
 
-### For `dev/us-east-1`
+### State Management
 
-```ruby
-# enterprise/dev/us-east-1
+This infrastructure uses AWS-managed state backend for secure and collaborative development. The bootstrap script provisions the following components with enterprise-grade security configurations:
 
+- **S3 State Bucket**: Encrypted storage for Terraform state files with versioning enabled
+- **S3 Access Logging Bucket**: Centralized audit trail for state bucket operations
+- **DynamoDB Lock Table**: Distributed locking mechanism to prevent concurrent state modifications
+
+Execute the bootstrap script to initialize the backend infrastructure:
+
+```bash
+./bootstrap/setup-backend.sh
+```
+
+**Prerequisites**: Ensure AWS credentials are configured with appropriate IAM permissions for S3 and DynamoDB resource creation.
+
+### Development Environment - Primary Region
+
+Deploy infrastructure to the primary development region:
+
+```bash
+cd enterprise/dev/us-east-1
 ./infra-management.sh apply
 ```
 
-### For `dev/us-west-1`
+### Development Environment - Secondary Region
 
-```ruby
-# enterprise/dev/us-west-1
+Deploy infrastructure to the secondary development region for disaster recovery:
 
+```bash
+cd enterprise/dev/us-west-1
 ./infra-management.sh apply
 ```
 
-### For `dev/global/failover`
+### Development Environment - Global Failover Configuration
 
-```ruby
-# enterprise/dev/global/failover
+Configure cross-region disaster recovery resources:
 
-terragrunt run apply
+```bash
+cd enterprise/dev/global/failover
+terragrunt run-all apply
 ```
 
-## Delete infrastructure
+**Note**: Ensure proper AWS credentials and permissions are configured before executing deployment commands. Review the generated Terraform plans before applying changes to production environments.
 
-### For `dev/us-east-1`
+## Destroy Infrastructure
 
-```ruby
-# enterprise/dev/us-east-1
+### Development Environment - Primary Region
 
+To safely remove all infrastructure resources from the primary development region:
+
+```bash
+cd enterprise/dev/us-east-1
 ./infra-management.sh destroy
 ```
 
+**Warning**: This operation will permanently delete all infrastructure resources in the specified environment. Ensure you have:
+
+- Backed up any critical data
+- Confirmed this is the intended environment
+- Reviewed the destruction plan before proceeding
+
 ## Sync stacks on Terramate - Steps
 
-1. Install CLIs: `terragrunt`, `terraform` and `terramate`
-2. import existing Terragrunt modules (modules with a state backend configuration) as Terramate stacks:
+1. **Prerequisites**: Install required command-line tools:
+  - `terragrunt` - Infrastructure orchestration and configuration management
+  - `terraform` - Infrastructure as Code provisioning engine
+  - `terramate` - Stack management and CI/CD integration platform
+
+2. **Import Existing Infrastructure**: Convert existing Terragrunt modules with configured state backends into Terramate stacks:
 
 ```ruby
 terramate create --all-terragrunt
 ```
 
-This command detects your existing Terragrunt modules, creates a stack configuration in each of them
-
-and automatically sets up the **order of execution** using the **before** and **after** attributes based on detected Terragrunt dependencies.
+This command detects your existing Terragrunt modules, creates a stack configuration in each of them and automatically sets up the **order of execution** using the **before** and **after** attributes based on detected Terragrunt dependencies.
 
 3. List all Stacks:
 
@@ -186,7 +218,7 @@ terramate run \
   -- terragrunt plan -out drift.tfplan -detailed-exitcode -lock=false
 ```
 
-![alt text](<screenshots/stacks.png>)
+![alt text](<zdocs/screenshots/stacks.png>)
 
 - The easiest way to sync your stacks is to run a drift detection workflow in all stacks and sync the result to Terramate Cloud.
 

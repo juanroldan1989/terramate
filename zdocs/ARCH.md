@@ -1,24 +1,6 @@
 # Architecture Overview
 
-Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
-
-```bash
-enterprise/
-├── dev/eu-east-1/          # Development Account + Region
-├── qa/eu-west-1/           # QA Account + Region (DR for prod)
-└── prod/eu-central-1/      # Production Account + Region
-    ├── 01-networking/
-    │   ├── vpc-1/          # Multiple VPCs per region
-    │   └── vpc-2/
-    ├── 02-compute/
-    │   ├── eks-clusters/
-    │   │   ├── cluster-1/  # Multiple clusters per region
-    │   │   └── cluster-2/
-    │   └── ecs-clusters/
-    └── 03-applications/
-        ├── service-a/
-        └── service-b/
-```
+Multi-region & multi-account enterprise infrastructure designed for scaling to hundreds of components. The architecture implements a three-tier infrastructure model (networking, compute, applications) with automated drift detection, CI/CD pipelines and cross-regional failover capabilities.
 
 ## Design Strengths
 
