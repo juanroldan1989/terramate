@@ -139,37 +139,6 @@ terramate run \
 
 - This works because Terramate CLI extracts data such as metadata, resources, Git metadata, and more from the created plans and the environment in which it's running, sanitizes it locally and syncs the result to Terramate Cloud. **This makes Terramate extremely secure** since no sensitive information, such as credentials or certificates, will ever be synced to Terramate Cloud.
 
-## Github Action Workflows
-
-1. Infrastructure provisioned.
-2. Pull Request is created: ECS Service adjusted to have **3** tasks associated.
-3. Terramate shows "Preview" of changes:
-
-![alt text](<screenshots/github-pull-request-preview.png>)
-
-3. Terramate Cloud also shows "Preview" of changes:
-
-![alt text](<screenshots/terramate-pull-request-preview.png>)
-
-![alt text](<screenshots/terramate-pull-request-preview-ascii.png>)
-
-4. PR is reviewed, approved and merged:
-
-![alt text](<screenshots/pull-request-merged.png>)
-
-5. Infrastructure changes are automatically provisioned via Github Action workflow:
-
-![alt text](<screenshots/github-provision-infra.png>)
-
-### Variation
-
-1. Infrastructure provisioned.
-2. ECS Service is adjusted via ClickOps.
-3. "Drift Detection" workflow is triggered (on-demand / every 1 hour).
-4. Terramate Cloud shows ECS Service as "drifted" resource:
-
-![alt text](<screenshots/terramate-detects-drifted-resource.png>)
-
 ## Docs
 
 https://terramate.io/docs/cli/on-boarding/terragrunt

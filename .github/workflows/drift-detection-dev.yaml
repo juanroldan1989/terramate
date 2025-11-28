@@ -74,7 +74,7 @@ jobs:
         id: drift
         run: |
           terramate run \
-            --parallel 8 \
+            --parallel 4 \
             --sync-drift-status \
             --continue-on-error \
             --tags Environment:dev,Region:${{ matrix.region }} \

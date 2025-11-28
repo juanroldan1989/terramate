@@ -22,7 +22,38 @@ This repository implements a comprehensive drift detection strategy using Terram
   - **Scope**: Changed stacks in production environment
   - **Security**: OIDC authentication with AWS
 
-### Drift Detection Workflows (Implemented)
+### Example A
+
+1. Infrastructure provisioned.
+2. Pull Request is created: ECS Service adjusted to have **3** tasks associated.
+3. Terramate shows "Preview" of changes:
+
+![alt text](<screenshots/github-pull-request-preview.png>)
+
+3. Terramate Cloud also shows "Preview" of changes:
+
+![alt text](<screenshots/terramate-pull-request-preview.png>)
+
+![alt text](<screenshots/terramate-pull-request-preview-ascii.png>)
+
+4. PR is reviewed, approved and merged:
+
+![alt text](<screenshots/pull-request-merged.png>)
+
+5. Infrastructure changes are automatically provisioned via Github Action workflow:
+
+![alt text](<screenshots/github-provision-infra.png>)
+
+### Example B
+
+1. Infrastructure provisioned.
+2. ECS Service is adjusted via ClickOps.
+3. "Drift Detection" workflow is triggered (on-demand / every 1 hour).
+4. Terramate Cloud shows ECS Service as "drifted" resource:
+
+![alt text](<screenshots/terramate-detects-drifted-resource.png>)
+
+### Drift Detection Workflows
 
 Our infrastructure implements a **hybrid environment-based approach with region matrices** for comprehensive drift detection across multiple environments and regions:
 
@@ -76,7 +107,7 @@ This distribution provides:
 - **Environment SLAs**: Production (6h frequency) vs QA (12h) vs Development (48-72h)
 
 ### **Optimized Resource Usage**
-- **Consistent parallelism**: All environments use `--parallel 8` for balanced resource utilization
+- **Parallelism based on environment**: `prod` (`12` - higher for faster detection), `qa` (`8`) and `dev` (`4` - lower to conserve resources).
 - **Frequency optimization**: Production monitored most frequently (every 6 hours), development least frequent (3x/week)
 - **Regional efficiency**: Matrix strategy runs regions in parallel rather than sequentially
 
