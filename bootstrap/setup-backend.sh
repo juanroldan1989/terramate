@@ -43,7 +43,7 @@ echo ""
 
 # Create access logs bucket first
 # This bucket stores detailed logs of every request to your state bucket
-# Provides security auditing, compliance trails, and troubleshooting capabilities
+# Provides security auditing, compliance trails and troubleshooting capabilities
 echo "1️⃣ Creating access logs bucket..."
 echo "   📝 This bucket will record all access to your Terraform state for security & compliance"
 create_s3_bucket "$ACCESS_LOGS_BUCKET" "$AWS_REGION"
@@ -97,7 +97,7 @@ aws s3api put-public-access-block \
     "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
 # Enable access logging
-# Records who, what, when, and where for every state bucket access
+# Records who, what, when and where for every state bucket access
 # Essential for security auditing and troubleshooting Terraform operations
 echo "📊 Enabling access logging (audit trail for all state bucket operations)..."
 aws s3api put-bucket-logging \

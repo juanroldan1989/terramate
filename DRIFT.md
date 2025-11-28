@@ -2,9 +2,9 @@
 
 ## Overview
 
-Infrastructure drift occurs when the actual state of deployed resources diverges from the intended configuration defined in your Infrastructure as Code (IaC). This can happen due to manual changes, external modifications, or configuration updates outside of your deployment pipeline. Detecting and managing drift is critical for maintaining infrastructure reliability, security, and compliance.
+Infrastructure drift occurs when the actual state of deployed resources diverges from the intended configuration defined in your Infrastructure as Code (IaC). This can happen due to manual changes, external modifications, or configuration updates outside of your deployment pipeline. Detecting and managing drift is critical for maintaining infrastructure reliability, security and compliance.
 
-This repository implements a comprehensive drift detection strategy using Terramate, Terragrunt, and GitHub Actions to monitor infrastructure across multiple environments and regions.
+This repository implements a comprehensive drift detection strategy using Terramate, Terragrunt and GitHub Actions to monitor infrastructure across multiple environments and regions.
 
 ## GitHub Actions Workflows
 
@@ -14,7 +14,7 @@ This repository implements a comprehensive drift detection strategy using Terram
   - **Trigger**: Pull request events
   - **Purpose**: Validate and preview changes before merge
   - **Scope**: Changed stacks only (`--changed` flag)
-  - **Features**: Format checking, validation, and plan generation with Terramate Cloud sync
+  - **Features**: Format checking, validation and plan generation with Terramate Cloud sync
 
 - **`provision-infra.yaml`** - Deploy infrastructure changes to production
   - **Trigger**: Push to main branch
@@ -121,4 +121,4 @@ This distribution provides:
 - **Easy expansion**: Adding new regions requires only updating the matrix configuration
 - **Cross-environment learning**: Development drift patterns can inform production monitoring strategies
 
-This multi-regional, environment-based approach provides comprehensive infrastructure monitoring while respecting operational, compliance, and geographic requirements.
+This multi-regional, environment-based approach provides comprehensive infrastructure monitoring while respecting operational, compliance and geographic requirements.

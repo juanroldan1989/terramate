@@ -1,6 +1,4 @@
-# Enterprise Infrastructure Architecture
-
-## Architecture Overview
+# Architecture Overview
 
 Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
 
@@ -46,7 +44,7 @@ enterprise/
 ```bash
 enterprise/prod/eu-central-1/
 ├── 01-networking/
-│   ├── vpc-1/ vpc-2/ ... vpc-50/     # 50 VPCs
+│   ├── vpc-1/ vpc-2/ ... vpc-50/        # 50 VPCs
 ├── 02-compute/
 │   ├── eks-clusters/
 │   │   ├── cluster-1/ ... cluster-100/  # 100 EKS clusters
@@ -161,19 +159,6 @@ locals {
 inputs = {
   vpc_cidr = local.region_vars.locals.vpc_cidrs["vpc-1"]
   azs      = local.region_vars.locals.azs
-
-  # Cross-region backup
-  backup_configuration = {
-    cross_region_backup = true
-    destination_region  = local.region_vars.locals.dr_region
-    backup_schedule     = "0 2 * * *"
-  }
-
-  tags = {
-    Environment = local.account_vars.locals.environment
-    Region      = local.region_vars.locals.region
-    Component   = "vpc-1"
-  }
 }
 ```
 
@@ -206,7 +191,7 @@ Namespace: enterprise-prod-eu-central-1
 ## Architecture Benefits
 
 ### Scalability
-- ✅ Supports hundreds of VPCs, clusters, and applications
+- ✅ Supports hundreds of VPCs, clusters and applications
 - ✅ Independent component deployment
 - ✅ Parallel infrastructure provisioning
 

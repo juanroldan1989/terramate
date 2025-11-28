@@ -1,10 +1,56 @@
 # Enterprise Infrastructure Management
 
-This project implements a structured enterprise infrastructure configuration following the hierarchy:
+Multi-region & multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
 
+## Folder Structure
+
+```ruby
+enterprise/
+├── dev/                        # Development Environment
+│   ├── account.hcl               # AWS account configuration
+│   ├── global/                   # Global/cross-region resources
+│   │   ├── region.hcl              # Global region settings
+│   │   └── failover/               # Disaster recovery configuration
+│   │
+│   ├── us-east-1/              # Primary US region
+│   │   ├── region.hcl            # Region-specific settings
+│   │   ├── 01-networking/        # VPC, subnets, security groups
+│   │   ├── 02-compute/           # ECS clusters, EKS clusters
+│   │   └── 03-applications/      # Application services
+│   │
+│   └── us-west-1/              # Secondary US region (DR)
+│       ├── region.hcl            # Region-specific settings
+│       ├── 01-networking/        # VPC, subnets, security groups
+│       ├── 02-compute/           # ECS clusters, EKS clusters
+│       └── 03-applications/      # Application services
+│
+├── qa/                         # QA/Testing Environment
+│   ├── account.hcl               # AWS account configuration
+│   └── eu-west-1/                # EU testing region
+│       ├── region.hcl              # Region-specific settings
+│       ├── 01-networking/          # VPC, subnets, security groups
+│       ├── 02-compute/             # ECS clusters, EKS clusters
+│       └── 03-applications/        # Application services
+│
+├── prod/                       # Production Environment
+│   ├── account.hcl               # AWS account configuration
+│   └── eu-central-1/             # EU production region
+│       ├── region.hcl              # Region-specific settings
+│       ├── 01-networking/          # VPC, subnets, security groups
+│       ├── 02-compute/             # ECS clusters, EKS clusters
+│       └── 03-applications/        # Application services
+│
+├── scripts/                    # Utility scripts
+│   └── dr-test.sh                # Disaster recovery testing
+├── DR.md                       # Disaster recovery documentation
+└── README.md                   # Enterprise documentation
 ```
-environments → regions → infrastructure layers → components
-```
+
+### Infrastructure Layers
+
+- **01-networking/**: Foundation layer containing VPCs, subnets, security groups and network ACLs
+- **02-compute/**: Compute resources including ECS clusters, EKS clusters and auto-scaling groups
+- **03-applications/**: Application-specific services and resources built on top of compute and networking
 
 ## Key Components
 
@@ -13,7 +59,7 @@ environments → regions → infrastructure layers → components
 - **Terramate**: Provides advanced stack management and CI/CD integration capabilities
 
 ## Documentation
-- **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt, and Terraform
+- **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt and Terraform
 - **[Drift Detection Strategy](DRIFT.md)** - Comprehensive drift monitoring across environments and regions
 - **[Disaster Recovery Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
 
@@ -22,12 +68,13 @@ environments → regions → infrastructure layers → components
   - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
   - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
   - **[Production](enterprise/prod/)** - EU production infrastructure (eu-central-1)
+- **[Architecture Overview](ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components with built-in disaster recovery.
 
 ## Automation & CI/CD
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
   - **[Infrastructure Preview](.github/workflows/infra-preview.yaml)** - PR-based change validation
   - **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
-  - **[Drift Detection Workflows](.github/workflows/drift-detection/)** - Multi-environment drift monitoring
+  - **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
 
 ## Configuration
 - **[Terramate Configuration](terramate.tm.hcl)** - Stack management and orchestration
@@ -145,7 +192,7 @@ terramate run \
 
 - The command above runs a `terragrunt plan` in all your stacks and sends the result to Terramate Cloud.
 
-- This works because Terramate CLI extracts data such as metadata, resources, Git metadata, and more from the created plans and the environment in which it's running, sanitizes it locally and syncs the result to Terramate Cloud. **This makes Terramate extremely secure** since no sensitive information, such as credentials or certificates, will ever be synced to Terramate Cloud.
+- This works because Terramate CLI extracts data such as metadata, resources, Git metadata and more from the created plans and the environment in which it's running, sanitizes it locally and syncs the result to Terramate Cloud. **This makes Terramate extremely secure** since no sensitive information, such as credentials or certificates, will ever be synced to Terramate Cloud.
 
 ## Contributing
 
@@ -169,4 +216,4 @@ Contributions are welcomed to this open source project!
 
 This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
 
-The MIT License is a permissive license that allows you to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, provided that the above copyright notice and this permission notice appear in all copies.
+The MIT License is a permissive license that allows you to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies of this software, provided that the above copyright notice and this permission notice appear in all copies.
