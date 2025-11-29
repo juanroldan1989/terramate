@@ -22,7 +22,7 @@ This repository implements a comprehensive drift detection strategy using Terram
   - **Scope**: Changed stacks in production environment
   - **Security**: OIDC authentication with AWS
 
-### Example A
+### Example
 
 1. Infrastructure provisioned.
 2. Pull Request is created: ECS Service adjusted to have **3** tasks associated.
@@ -43,15 +43,6 @@ This repository implements a comprehensive drift detection strategy using Terram
 5. Infrastructure changes are automatically provisioned via Github Action workflow:
 
 ![alt text](<screenshots/github-provision-infra.png>)
-
-### Example B
-
-1. Infrastructure provisioned.
-2. ECS Service is adjusted via ClickOps.
-3. "Drift Detection" workflow is triggered (on-demand / every 1 hour).
-4. Terramate Cloud shows ECS Service as "drifted" resource:
-
-![alt text](<screenshots/terramate-detects-drifted-resource.png>)
 
 ## Drift Detection Workflows
 
@@ -85,6 +76,15 @@ This infrastructure implements a **hybrid environment-based approach with region
    - **Scope**: All environments and regions (no filtering)
    - **Parallelism**: 5 concurrent executions
    - **Purpose**: Comprehensive drift analysis and troubleshooting
+
+### Example
+
+1. Infrastructure provisioned.
+2. ECS Service is adjusted via ClickOps.
+3. "Drift Detection" workflow is triggered (on-demand / every X hours).
+4. Terramate Cloud shows ECS Service as "drifted" resource:
+
+![alt text](<screenshots/terramate-detects-drifted-resource.png>)
 
 ## Regional Distribution Strategy
 

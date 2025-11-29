@@ -2,6 +2,8 @@
 
 Multi-region & multi-account enterprise infrastructure designed for scaling to hundreds of components. The architecture implements a three-tier infrastructure model (networking, compute, applications) with automated drift detection, CI/CD pipelines and cross-regional failover capabilities.
 
+![alt text](<zdocs/screenshots/dev-environment.png>)
+
 ## Folder Structure
 
 ```ruby
