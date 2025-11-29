@@ -154,6 +154,8 @@ terragrunt run-all apply
 
 ## Destroy Infrastructure
 
+![alt text](<zdocs/screenshots/dev-destroy.gif>)
+
 ### Development Environment - Primary Region
 
 To safely remove all infrastructure resources from the primary development region:
