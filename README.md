@@ -62,11 +62,6 @@ enterprise/
 - **Terragrunt Framework**: Handles environment configuration and orchestrates infrastructure provisioning
 - **Terramate**: Provides advanced stack management and CI/CD integration capabilities
 
-## Documentation
-- **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt and Terraform
-- **[Drift Detection Strategy](zdocs/DRIFT.md)** - Comprehensive drift monitoring across environments and regions
-- **[Failover Support Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
-
 ## Infrastructure
 - **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
   - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
@@ -80,28 +75,53 @@ enterprise/
   - **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
   - **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
 
-## Configuration
-- **[Terramate Configuration](terramate.tm.hcl)** - Stack management and orchestration
-- **[Root Configuration](root.hcl)** - Shared Terragrunt configuration and AWS provider setup
-- **[Bootstrap Scripts](bootstrap/)** - Initial infrastructure setup utilities
-
 ## Provision infrastructure
 
-### State Management
+![alt text](<zdocs/screenshots/dev-provisioning.gif>)
 
-This infrastructure uses AWS-managed state backend for secure and collaborative development. The bootstrap script provisions the following components with enterprise-grade security configurations:
+```ts
+...
 
-- **S3 State Bucket**: Encrypted storage for Terraform state files with versioning enabled
-- **S3 Access Logging Bucket**: Centralized audit trail for state bucket operations
-- **DynamoDB Lock Table**: Distributed locking mechanism to prevent concurrent state modifications
+11:02:22.948 STDOUT [03-applications/service-a] terraform: Outputs:
+11:02:22.948 STDOUT [03-applications/service-a] terraform:
+11:02:22.948 STDOUT [03-applications/service-a] terraform: alb_zone_id = "Z35SXDOTRQ7X7K"
+11:02:22.948 STDOUT [03-applications/service-a] terraform: ecs_task_sg_id = "sg-0e827d8bbe8b26698"
+11:02:22.948 STDOUT [03-applications/service-a] terraform: log_group_name = "/ecs/log-group/dev/app-a"
+11:02:22.948 STDOUT [03-applications/service-a] terraform: service_name = "service-a"
+11:02:22.948 STDOUT [03-applications/service-a] terraform: service_url = "dev-us-east-1-app-a-alb-48296827.us-east-1.elb.amazonaws.com"
 
-Execute the bootstrap script to initialize the backend infrastructure:
-
-```bash
-./bootstrap/setup-backend.sh
+❯❯ Run Summary  3 units  5m
+   ────────────────────────────
+   Succeeded    3
 ```
 
-**Prerequisites**: Ensure AWS credentials are configured with appropriate IAM permissions for S3 and DynamoDB resource creation.
+```ts
+➜  terramate git:(main) ✗ curl dev-us-east-1-app-a-alb-48296827.us-east-1.elb.amazonaws.com
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
 
 ### Development Environment - Primary Region
 
@@ -148,6 +168,22 @@ cd enterprise/dev/us-east-1
 - Backed up any critical data
 - Confirmed this is the intended environment
 - Reviewed the destruction plan before proceeding
+
+## State Management
+
+This infrastructure uses AWS-managed state backend for secure and collaborative development. The bootstrap script provisions the following components with enterprise-grade security configurations:
+
+- **S3 State Bucket**: Encrypted storage for Terraform state files with versioning enabled
+- **S3 Access Logging Bucket**: Centralized audit trail for state bucket operations
+- **DynamoDB Lock Table**: Distributed locking mechanism to prevent concurrent state modifications
+
+Execute the bootstrap script to initialize the backend infrastructure:
+
+```bash
+./bootstrap/setup-backend.sh
+```
+
+**Prerequisites**: Ensure AWS credentials are configured with appropriate IAM permissions for S3 and DynamoDB resource creation.
 
 ## Sync stacks on Terramate - Steps
 
@@ -227,6 +263,16 @@ terramate run \
 - The command above runs a `terragrunt plan` in all your stacks and sends the result to Terramate Cloud.
 
 - This works because Terramate CLI extracts data such as metadata, resources, Git metadata and more from the created plans and the environment in which it's running, sanitizes it locally and syncs the result to Terramate Cloud. **This makes Terramate extremely secure** since no sensitive information, such as credentials or certificates, will ever be synced to Terramate Cloud.
+
+## Documentation
+- **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt and Terraform
+- **[Drift Detection Strategy](zdocs/DRIFT.md)** - Comprehensive drift monitoring across environments and regions
+- **[Failover Support Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
+
+## Configuration
+- **[Terramate Configuration](terramate.tm.hcl)** - Stack management and orchestration
+- **[Root Configuration](root.hcl)** - Shared Terragrunt configuration and AWS provider setup
+- **[Bootstrap Scripts](bootstrap/)** - Initial infrastructure setup utilities
 
 ## Contributing
 
