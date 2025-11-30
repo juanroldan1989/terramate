@@ -27,12 +27,12 @@
 
 ## Benefits of Route 53 Failover Approach
 
-✅ No VPC peering needed - applications are independent
-✅ Simpler infrastructure - fewer moving parts
-✅ Lower latency - users connect directly to closest/healthy region
-✅ Easier testing - can test each region independently
-✅ Cost effective - only pay for Route 53 health checks
-✅ Standard AWS pattern - well-documented and supported
+- No VPC peering needed: applications are independent
+- Simpler infrastructure: fewer moving parts
+- Lower latency: users connect directly to closest/healthy region
+- Easier testing: can test each region independently
+- Cost effective: only pay for Route 53 health checks
+- Standard AWS pattern: well-documented and supported
 
 ## Testing Your DR Setup
 
@@ -192,13 +192,13 @@ cd enterprise/dev/global/failover/
 terragrunt apply
 ```
 
-![alt text](stacks-provisioned.png)
+![alt text](../zdocs/screenshots/stacks.png)
 
 ### Step 4: Verification & Testing Commands
 
 #### Verify DNS Resolution
 
-![alt text](route53-records-primary-failover.png)
+![alt text](../zdocs/screenshots/route53-records-primary-failover.png)
 
 ```bash
 # Test primary resolution
@@ -241,7 +241,7 @@ dig service-a-dev.automata-labs.nl +short
 
 #### Monitor Health Checks
 
-![alt text](route53-health-check-points-to-us-east-1.png)
+![alt text](../zdocs/screenshots/route53-health-check-points-to-us-east-1.png)
 
 ```bash
 # Monitor Route 53 health check status
@@ -337,6 +337,7 @@ Total: ~$25-28/year
 ```
 
 ### Monthly AWS Resources
+
 ```bash
 VPC (2 regions): Free
 ALB (2 regions): ~$32/month ($16 × 2)
@@ -345,12 +346,17 @@ Route 53: ~$1/month
 Total Monthly: ~$63-93/month
 ```
 
-- Adjustment made via Console: CloudWatch Alarm -> "HealthCheckStatus < 1 for 1 datapoints within 1 minute"
+## Total Failover Workflow
 
-- 21:02 - ECS service "A" scaled down to 0 in primary region for testing failover.
+1. 21:02 - ECS service "A" scaled down to 0 in primary region for testing failover.
 
-- 21:03 - Route 53 detected health check failure with:
--         Failure: HTTP Status Code 503, Service Temporarily Unavailable.
+2. 21:03 - Route 53 detected health check failure with:
+
+```ruby
+Failure: HTTP Status Code 503, Service Temporarily Unavailable.
+```
+
+3. 21:03 - Real time monitoring with:
 
 ```bash
 watch -n 1 "echo '=== Health Check Status ===' && \
@@ -360,8 +366,8 @@ aws route53 get-health-check-status \
     --output table"
 ```
 
-- 21:05 - CloudWatch alarm triggered after 1 consecutive periods of 60s each.
-- 21:06 - Route 53 switched DNS to secondary (DR) endpoint.
-- 21:07 - Verified application accessible via secondary endpoint.
+4. 21:04 - CloudWatch alarm triggered after 1 consecutive periods of 60s each.
+5. 21:04 - Route 53 switched DNS to secondary (DR) endpoint.
+6. 21:05 - Verified application accessible via secondary endpoint.
 
-- Total failover time: ~4-5 minutes.
+- Total failover time: ~2-3 minutes.
