@@ -38,12 +38,12 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Environment = "${local.env}"
-      Region      = "${local.aws_region}"
-      CostCenter  = "AWS Billing"
-      ManagedBy   = "Terraform"
-      Owner       = "Platform Team"
-      Project     = "terramate-infrastructure"
+      environment = "${local.env}"
+      region      = "${local.aws_region}"
+      cost_center = "AWS Billing"
+      managed_by  = "Terraform"
+      owner       = "Platform Team"
+      project     = "terramate-infrastructure"
     }
   }
 }

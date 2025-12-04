@@ -75,7 +75,7 @@ jobs:
             --parallel 8 \
             --sync-drift-status \
             --continue-on-error \
-            --tags Environment:qa,Region:${{ matrix.region }} \
+            --tags environment:qa,region:${{ matrix.region }} \
             --terraform-plan-file=drift.tfplan \
             --terragrunt \
             -- \
