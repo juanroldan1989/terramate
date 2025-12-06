@@ -1,0 +1,237 @@
+name: Infra Security Preview
+
+on:
+  pull_request:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      checks: read
+
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      GITHUB_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Terramate
+        uses: terramate-io/terramate-action@v3
+        with:
+          version: "0.14.0"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.83.2
+          token: ${{ github.token }}
+
+      - name: Configure AWS credentials via OIDC
+        id: auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
+
+      # To avoid error due to uncommitted files from previous steps
+      - name: Check for uncommitted files
+        run: |
+          git add .
+          git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
+
+      - name: List changed stacks
+        id: list
+        run: terramate list --changed
+
+      - name: Initialize Terragrunt in changed stacks
+        if: steps.list.outputs.stdout
+        id: init
+        run: |
+          terramate run \
+           --parallel 1 \
+           --changed \
+           -- \
+           terragrunt init --non-interactive -lock-timeout=5m
+
+      - name: Generate Terraform plan for changed stacks
+        if: steps.list.outputs.stdout
+        id: plan
+        run: |
+          terramate run \
+            --parallel 5 \
+            --changed \
+            --sync-preview \
+            --terraform-plan-file=out.tfplan \
+            --terragrunt \
+            --continue-on-error \
+            -- \
+            terragrunt plan -out out.tfplan -detailed-exitcode -lock=false
+
+      - name: Setup tfsec
+        if: steps.list.outputs.stdout
+        uses: aquasecurity/tfsec-action@v1.0.3
+
+      - name: Run tfsec security scan on changed stacks
+        if: steps.list.outputs.stdout
+        id: tfsec
+        run: |
+          # Create a script to run tfsec on each changed stack
+          cat > /tmp/run-tfsec.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          STACK_PATH=$(pwd | sed "s|.*/enterprise/||")
+          STACK_NAME=$(basename "$PWD")
+
+          echo "Running tfsec security scan on $STACK_PATH"
+
+          # Run tfsec on the Terragrunt cache (where actual Terraform code lives)
+          if [ -d ".terragrunt-cache" ]; then
+            TERRAFORM_DIR=$(find .terragrunt-cache -type d -name "modules" -o -name "*.tf" | head -1 | xargs dirname)
+
+            if [ -n "$TERRAFORM_DIR" ] && [ -d "$TERRAFORM_DIR" ]; then
+              tfsec "$TERRAFORM_DIR" \
+                --format json \
+                --out "tfsec-${STACK_PATH//\//-}.json" \
+                --soft-fail || true
+
+              tfsec "$TERRAFORM_DIR" \
+                --format markdown \
+                --out "tfsec-${STACK_PATH//\//-}.md" \
+                --soft-fail || true
+
+              echo "✓ Security scan completed for $STACK_PATH"
+            else
+              echo "⊘ No Terraform files found in $STACK_PATH"
+            fi
+          else
+            echo "⊘ No .terragrunt-cache found in $STACK_PATH - run init first"
+          fi
+          EOF
+          chmod +x /tmp/run-tfsec.sh
+
+          # Run security scan for each changed stack
+          terramate run \
+            --changed \
+            --continue-on-error \
+            -- \
+            /tmp/run-tfsec.sh
+
+          # Create combined report
+          echo "# tfsec Security Scan Results" > tfsec-combined.md
+          echo "" >> tfsec-combined.md
+          echo "Security analysis for changed infrastructure stacks." >> tfsec-combined.md
+          echo "" >> tfsec-combined.md
+
+          # Combine all markdown reports
+          for file in tfsec-*.md; do
+            if [ -f "$file" ]; then
+              echo "## Stack: ${file#tfsec-}" >> tfsec-combined.md
+              cat "$file" >> tfsec-combined.md
+              echo "" >> tfsec-combined.md
+            fi
+          done
+
+      - name: Generate tfsec summary
+        if: steps.list.outputs.stdout && steps.tfsec.outcome == 'success'
+        id: tfsec-summary
+        run: |
+          # Count issues by severity across all reports
+          CRITICAL=$(jq -s '[.[].results[]? | select(.severity == "CRITICAL")] | length' tfsec-*.json 2>/dev/null || echo "0")
+          HIGH=$(jq -s '[.[].results[]? | select(.severity == "HIGH")] | length' tfsec-*.json 2>/dev/null || echo "0")
+          MEDIUM=$(jq -s '[.[].results[]? | select(.severity == "MEDIUM")] | length' tfsec-*.json 2>/dev/null || echo "0")
+          LOW=$(jq -s '[.[].results[]? | select(.severity == "LOW")] | length' tfsec-*.json 2>/dev/null || echo "0")
+
+          echo "CRITICAL=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "HIGH=$HIGH" >> $GITHUB_OUTPUT
+          echo "MEDIUM=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "LOW=$LOW" >> $GITHUB_OUTPUT
+
+          # Create summary for PR comment
+          cat > tfsec-summary.md << SUMMARY
+          ## 🔒 Infrastructure Security Scan Results
+
+          | Severity | Count |
+          |----------|-------|
+          | 🔴 Critical | $CRITICAL |
+          | 🟠 High | $HIGH |
+          | 🟡 Medium | $MEDIUM |
+          | 🔵 Low | $LOW |
+
+          <details>
+          <summary>View detailed findings</summary>
+
+          $(cat tfsec-combined.md)
+
+          </details>
+          SUMMARY
+
+      - name: Post tfsec comment on PR
+        if: steps.list.outputs.stdout && steps.tfsec.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('tfsec-summary.md', 'utf8');
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🔒 Infrastructure Security Scan Results')
+            );
+
+            // Update or create comment
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary
+              });
+            }
+
+      - name: Upload tfsec reports
+        if: steps.list.outputs.stdout && steps.tfsec.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfsec-security-reports
+          path: |
+            tfsec-*.json
+            tfsec-*.md
+            tfsec-summary.md
+          retention-days: 30
+
+      - name: Fail on critical security issues
+        if: steps.list.outputs.stdout && steps.tfsec-summary.outputs.CRITICAL != '0'
+        run: |
+          echo "❌ Found ${{ steps.tfsec-summary.outputs.CRITICAL }} critical security issues"
+          echo "Please review and fix critical security findings before merging"
+          exit 1
