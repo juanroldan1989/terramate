@@ -60,7 +60,7 @@ jobs:
           terramate run \
            --parallel 1 \
            -- \
-           terragrunt init --terragrunt-non-interactive -lock-timeout=5m
+           terragrunt init --non-interactive -lock-timeout=5m
 
       # To avoid error due to uncommitted files from previous steps
       - name: Check for uncommitted files
