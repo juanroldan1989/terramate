@@ -70,10 +70,14 @@ enterprise/
 - **[Architecture Overview](zdocs/ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components.
 
 ## Automation & CI/CD
-- **[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
-  - **[Infrastructure Preview](.github/workflows/infra-preview.yaml)** - PR-based change validation
-  - **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
-  - **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
+
+**[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
+
+- **[Infrastructure Changes Preview](.github/workflows/infra-changes-preview.yaml)** - PR-based change validation
+- **[Infrastructure Costs Preview](.github/workflows/infra-costs-preview.yaml)** - PR-based infrastructure costs estimation
+- **[Infrastructure Security Preview](.github/workflows/infra-security-preview.yaml)** - PR-based infrastructure Tfsec security best practices validation
+- **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
+- **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
 
 ## Provision infrastructure
 
