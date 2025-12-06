@@ -1,0 +1,153 @@
+name: Infra Costs Preview
+
+on:
+  pull_request:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      checks: read
+
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      GITHUB_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Terramate
+        uses: terramate-io/terramate-action@v3
+        with:
+          version: "0.14.0"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.83.2
+          token: ${{ github.token }}
+
+      - name: Configure AWS credentials via OIDC
+        id: auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
+
+      # To avoid error due to uncommitted files from previous steps
+      - name: Check for uncommitted files
+        run: |
+          git add .
+          git diff --cached --exit-code || echo "Found uncommitted files, but continuing..."
+
+      - name: List changed stacks
+        id: list
+        run: terramate list --changed
+
+      - name: Initialize Terragrunt in changed stacks
+        if: steps.list.outputs.stdout
+        id: init
+        run: |
+          terramate run \
+           --parallel 1 \
+           --changed \
+           -- \
+           terragrunt init --non-interactive -lock-timeout=5m
+
+      - name: Generate Terraform plan for changed stacks
+        if: steps.list.outputs.stdout
+        id: plan
+        run: |
+          terramate run \
+            --parallel 5 \
+            --changed \
+            --sync-preview \
+            --terraform-plan-file=out.tfplan \
+            --terragrunt \
+            --continue-on-error \
+            -- \
+            terragrunt plan -out out.tfplan -detailed-exitcode -lock=false
+
+      - name: Setup Infracost
+        if: steps.list.outputs.stdout && env.INFRACOST_API_KEY != ''
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate Infracost cost estimate breakdown
+        if: steps.list.outputs.stdout && env.INFRACOST_API_KEY != ''
+        id: infracost
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          # Create a script to generate cost estimates for each changed stack
+          cat > /tmp/generate-costs.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          STACK_PATH=$(pwd | sed "s|.*/enterprise/||")
+          PLAN_FILE="out.tfplan"
+
+          if [ -f "$PLAN_FILE" ]; then
+            echo "Generating cost estimate for $STACK_PATH"
+
+            # Convert Terraform binary plan to JSON
+            terragrunt show -json "$PLAN_FILE" > plan.json
+
+            # Generate Infracost breakdown
+            infracost breakdown \
+              --path plan.json \
+              --format json \
+              --out-file infracost-${STACK_PATH//\//-}.json
+
+            echo "✓ Cost estimate generated for $STACK_PATH"
+          else
+            echo "⊘ No plan file found for $STACK_PATH - Skipping cost estimate"
+          fi
+          EOF
+          chmod +x /tmp/generate-costs.sh
+
+          # Run cost estimation for each changed stack
+          terramate run \
+            --changed \
+            --continue-on-error \
+            -- \
+            /tmp/generate-costs.sh
+
+          # Combine all cost estimates into a single report
+          infracost output \
+            --path "infracost-*.json" \
+            --format json \
+            --out-file infracost-combined.json || echo "No cost files to combine"
+
+      - name: Post Infracost comment
+        if: steps.list.outputs.stdout && steps.infracost.outcome == 'success'
+        uses: infracost/actions/comment@v1
+        with:
+          path: infracost-combined.json
+          behavior: update
+          github-token: ${{ github.token }}
+
+      - name: Upload Infracost breakdown
+        if: steps.list.outputs.stdout && steps.infracost.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: infracost-breakdown
+          path: |
+            infracost-*.json
+          retention-days: 30
