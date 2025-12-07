@@ -27,28 +27,17 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Install Terramate
-        uses: terramate-io/terramate-action@v3
+      - name: Setup Infrastructure Tools
+        uses: ./.github/actions/setup-infra-tools
         with:
-          version: "0.14.0"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.8"
-
-      - name: Setup Terragrunt
-        uses: autero1/action-terragrunt@v3
-        with:
-          terragrunt-version: 0.83.2
-          token: ${{ github.token }}
-
-      - name: Configure AWS credentials via OIDC
-        id: auth
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
           aws-region: us-east-1
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActions-TerramateRole
+
+      - name: Authenticate with AWS
+        uses: ./.github/actions/setup-aws
+        with:
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          aws-region: us-east-1
 
       - name: List changed stacks
         id: list
