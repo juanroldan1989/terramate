@@ -79,6 +79,10 @@ enterprise/
 - **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
 - **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
 
+## Disaster Recovery & Failover
+
+**[Failover implementation](enterprise/DR.md)** featuring automated recovery procedures, comprehensive monitoring and dedicated disaster recovery infrastructure designed for business continuity and minimal service disruption.
+
 ## Provision infrastructure
 
 ![alt text](<zdocs/screenshots/dev-provisioning.gif>)
@@ -273,7 +277,6 @@ terramate run \
 ## Documentation
 - **[Infrastructure Setup & Usage](README.md#setup)** - Getting started with Terramate, Terragrunt and Terraform
 - **[Drift Detection Strategy](zdocs/DRIFT.md)** - Comprehensive drift monitoring across environments and regions
-- **[Failover Support Documentation](enterprise/DR.md)** - Multi-region failover capabilities and procedures
 
 ## Configuration
 - **[Terramate Configuration](terramate.tm.hcl)** - Stack management and orchestration
