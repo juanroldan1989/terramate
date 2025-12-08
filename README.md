@@ -55,6 +55,7 @@ enterprise/
 - **01-networking/**: Foundation layer containing VPCs, subnets, security groups and network ACLs
 - **02-compute/**: Compute resources including ECS clusters, EKS clusters and auto-scaling groups
 - **03-applications/**: Application-specific services and resources built on top of compute and networking
+- **04-monitoring/**: Application/Cluster specific monitoring services built on top of compute and networking
 
 ## Key Components
 
@@ -63,6 +64,7 @@ enterprise/
 - **Terramate**: Provides advanced stack management and CI/CD integration capabilities
 
 ## Infrastructure
+
 - **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
   - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
   - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
@@ -82,6 +84,10 @@ enterprise/
 ## Disaster Recovery & Failover
 
 **[Failover implementation](enterprise/DR.md)** featuring automated recovery procedures, comprehensive monitoring and dedicated disaster recovery infrastructure designed for business continuity and minimal service disruption.
+
+## Infrastructure Cost Analysis
+
+**[This project integrates Infracost](zdocs/COST.md)** to provide comprehensive cost analysis for all pull requests containing infrastructure modifications. The analysis ensures financial transparency and promotes cost-conscious infrastructure decisions.
 
 ## Provision infrastructure
 
