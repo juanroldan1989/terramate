@@ -18,6 +18,7 @@ apply () {
 
 destroy () {
 dirs=(
+  "./04-monitoring/grafana"
   "./03-applications/service-a"
   "./02-compute/ecs-clusters/cluster-1"
   "./01-networking/vpc-1"
