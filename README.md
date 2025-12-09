@@ -18,13 +18,15 @@ enterprise/
 │   │   ├── region.hcl            # Region-specific settings
 │   │   ├── 01-networking/        # VPC, subnets, security groups
 │   │   ├── 02-compute/           # ECS clusters, EKS clusters
-│   │   └── 03-applications/      # Application services
+│   │   ├── 03-applications/      # Application services
+│   │   └── 04-monitoring/        # Monitoring services
 │   │
 │   └── us-west-1/              # Secondary US region (DR)
 │       ├── region.hcl            # Region-specific settings
 │       ├── 01-networking/        # VPC, subnets, security groups
 │       ├── 02-compute/           # ECS clusters, EKS clusters
-│       └── 03-applications/      # Application services
+│       ├── 03-applications/      # Application services
+│       └── 04-monitoring/        # Monitoring services
 │
 ├── qa/                         # QA/Testing Environment
 │   ├── account.hcl               # AWS account configuration
@@ -32,7 +34,8 @@ enterprise/
 │       ├── region.hcl              # Region-specific settings
 │       ├── 01-networking/          # VPC, subnets, security groups
 │       ├── 02-compute/             # ECS clusters, EKS clusters
-│       └── 03-applications/        # Application services
+│       ├── 03-applications/        # Application services
+│       └── 04-monitoring/          # Monitoring services
 │   ...
 │
 ├── prod/                       # Production Environment
@@ -41,7 +44,8 @@ enterprise/
 │       ├── region.hcl              # Region-specific settings
 │       ├── 01-networking/          # VPC, subnets, security groups
 │       ├── 02-compute/             # ECS clusters, EKS clusters
-│       └── 03-applications/        # Application services
+│       ├── 03-applications/        # Application services
+│       └── 04-monitoring/          # Monitoring services
 │   ...
 │
 ├── scripts/                    # Utility scripts
