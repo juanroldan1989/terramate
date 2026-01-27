@@ -1,8 +1,9 @@
 name: Drift Detection - QA
 
 on:
-  schedule:
-    - cron: '0 2,14 * * *' # Runs daily at 2 AM and 2 PM UTC
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 2,14 * * *' # Runs daily at 2 AM and 2 PM UTC
 
 jobs:
   qa-drift:

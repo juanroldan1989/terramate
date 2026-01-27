@@ -1,8 +1,9 @@
 name: Drift Detection - Production
 
 on:
-  schedule:
-    - cron: '0 */6 * * *' # Runs every 6 hours
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 */6 * * *' # Runs every 6 hours
 
 jobs:
   prod-drift:
