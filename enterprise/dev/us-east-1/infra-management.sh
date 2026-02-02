@@ -20,6 +20,7 @@ destroy () {
 dirs=(
   "./04-monitoring/grafana"
   "./03-applications/service-a"
+  "./03-applications/service-b"
   "./02-compute/ecs-clusters/cluster-1"
   "./01-networking/vpc-1"
 )

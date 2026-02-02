@@ -40,6 +40,8 @@ inputs = {
   ecs_cluster_id = dependency.cluster.outputs.cluster_id
   service_name   = "service-a"
   app_name       = "app-a"
+  app_image      = "juanroldan1989/greeting:0.0.1"
   container_name = "app-a"
+  container_port = 5002
   desired_count  = 3
 }
