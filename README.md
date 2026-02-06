@@ -54,45 +54,6 @@ enterprise/
 └── README.md                   # Enterprise documentation
 ```
 
-### Infrastructure Layers
-
-- **01-networking/**: Foundation layer containing VPCs, subnets, security groups and network ACLs
-- **02-compute/**: Compute resources including ECS clusters, EKS clusters and auto-scaling groups
-- **03-applications/**: Application-specific services and resources built on top of compute and networking
-- **04-monitoring/**: Application/Cluster specific monitoring services built on top of compute and networking
-
-## Key Components
-
-- **Terraform Modules**: Reusable infrastructure components sourced from the [infra-modules](https://github.com/juanroldan1989/infra-modules) repository
-- **Terragrunt Framework**: Handles environment configuration and orchestrates infrastructure provisioning
-- **Terramate**: Provides advanced stack management and CI/CD integration capabilities
-
-## Infrastructure
-
-- **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
-  - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
-  - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
-  - **[Production](enterprise/prod/)** - EU production infrastructure (eu-central-1)
-- **[Architecture Overview](zdocs/ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components.
-
-## Automation & CI/CD
-
-**[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
-
-- **[Infrastructure Changes Preview](.github/workflows/infra-changes-preview.yaml)** - PR-based change validation
-- **[Infrastructure Costs Preview](.github/workflows/infra-costs-preview.yaml)** - PR-based infrastructure costs estimation
-- **[Infrastructure Security Preview](.github/workflows/infra-security-preview.yaml)** - PR-based infrastructure Tfsec security best practices validation
-- **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
-- **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
-
-## Disaster Recovery & Failover
-
-**[Failover implementation](enterprise/DR.md)** featuring automated recovery procedures, comprehensive monitoring and dedicated disaster recovery infrastructure designed for business continuity and minimal service disruption.
-
-## Infrastructure Cost Analysis
-
-**[This project integrates Infracost](zdocs/COST.md)** to provide comprehensive cost analysis for all pull requests containing infrastructure modifications. The analysis ensures financial transparency and promotes cost-conscious infrastructure decisions.
-
 ## Provision infrastructure
 
 ![alt text](<zdocs/screenshots/dev-provisioning.gif>)
@@ -140,6 +101,46 @@ Commercial support is available at
 </html>
 ```
 
+### Infrastructure Layers
+
+- **01-networking/**: Foundation layer containing VPCs, subnets, security groups and network ACLs
+- **02-compute/**: Compute resources including ECS clusters, EKS clusters and auto-scaling groups
+- **03-applications/**: Application-specific services and resources built on top of compute and networking
+- **04-monitoring/**: Application/Cluster specific monitoring services built on top of compute and networking
+
+## Key Components
+
+- **Terraform Modules**: Reusable infrastructure components sourced from the [infra-modules](https://github.com/juanroldan1989/infra-modules) repository
+- **Terragrunt Framework**: Handles environment configuration and orchestrates infrastructure provisioning
+- **Terramate**: Provides advanced stack management and CI/CD integration capabilities
+
+## Infrastructure
+
+- **[Enterprise Environments](enterprise/)** - Production-ready infrastructure across dev/qa/prod environments
+  - **[Development](enterprise/dev/)** - US-based development infrastructure (us-east-1, us-west-1)
+  - **[QA](enterprise/qa/)** - EU testing environment (eu-west-1)
+  - **[Production](enterprise/prod/)** - EU production infrastructure (eu-central-1)
+- **[Architecture Overview](zdocs/ARCH.md)** - Multi-region, multi-account enterprise infrastructure designed for scaling to hundreds of components.
+
+## Automation & CI/CD
+
+**[GitHub Actions Workflows](.github/workflows/)** - Automated infrastructure management
+
+- **[Infrastructure Changes Preview](.github/workflows/infra-changes-preview.yaml)** - PR-based change validation
+- **[Infrastructure Costs Preview](.github/workflows/infra-costs-preview.yaml)** - PR-based infrastructure costs estimation
+- **[Infrastructure Security Preview](.github/workflows/infra-security-preview.yaml)** - PR-based infrastructure Tfsec security best practices validation
+- **[Infrastructure Provisioning](.github/workflows/provision-infra.yaml)** - Automated deployment to production
+- **[Drift Detection Workflows](.github/workflows/)** - Multi-environment drift monitoring support for on-demand and scheduled runs (`drift-detection-<env>.yaml` files).
+
+## Disaster Recovery & Failover
+
+**[Failover implementation](enterprise/DR.md)** featuring automated recovery procedures, comprehensive monitoring and dedicated disaster recovery infrastructure designed for business continuity and minimal service disruption.
+
+## Infrastructure Cost Analysis
+
+**[This project integrates Infracost](zdocs/COST.md)** to provide comprehensive cost analysis for all pull requests containing infrastructure modifications. The analysis ensures financial transparency and promotes cost-conscious infrastructure decisions.
+
+## Environments
 
 ### Development Environment - Primary Region
 
