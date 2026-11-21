@@ -5,8 +5,14 @@ infrastructure delivery and recovery case study. Demonstrate component boundarie
 reviewable changes, cost visibility, drift detection, access controls and measured
 recovery, with evidence that engineers and recruiters can inspect.
 
+Use Floci to exercise local provisioning, configuration adjustments, drift detection,
+bounded reconciliation loops and final verification through the actual Terramate,
+Terragrunt and Terraform tools. Reuse the supported infrastructure components across
+local and AWS paths, while recording emulator compatibility and AWS validation
+separately.
+
 Milestones are ordered by increasing implementation complexity, from documentation
-and small configuration fixes to cloud lifecycle tests, recovery and account
+and small configuration fixes to local integration tests, AWS lifecycle tests, recovery and account
 isolation. This is an implementation order, not a severity ranking: address exposed
 credentials or unsafe access before running a deployment, even where their complete
 replacement appears in a later milestone. Dependencies are called out explicitly.
@@ -36,6 +42,9 @@ local Terraform and Terragrunt caches:
 
 Recheck this baseline when work starts. Keep configured, historically demonstrated,
 locally verified, AWS verified and planned capabilities distinct.
+
+The Floci path added to this roadmap on 2026-11-21 is planned work. No local
+provisioning, runtime, drift or reconciliation result is established by this document.
 
 ## 1. Correct documentation and portfolio claims
 
@@ -137,7 +146,47 @@ Complexity: moderate. Coordinate module changes with `infra-modules`.
 Acceptance: a recorded release resolves to known module/image inputs, and interface
 errors fail before cloud deployment.
 
-## 5. Make cost and security reporting dependable
+## 5. Add an isolated Floci execution environment
+
+Complexity: moderate. Depends on milestones 2 and 4; cloud authentication and AWS
+backend work can proceed separately.
+
+- [ ] Add a version-pinned Docker Compose setup for Floci with readiness checks,
+  documented Docker prerequisites, persistence settings and start/stop/reset commands.
+- [ ] Create an explicit local environment with distinct Terramate stack IDs, tags,
+  resource names and state paths. Verify local selection cannot include AWS stacks.
+- [ ] Use dummy credentials and explicit local endpoint configuration for every
+  AWS service used by the scenario. Keep provider overrides at the environment
+  composition/generation layer rather than inside reusable modules.
+- [ ] Configure state independently of provider endpoints. Start with a local
+  backend; add emulated S3/locking later as a separate compatibility exercise.
+  Never reuse an AWS backend or existing AWS state for local execution.
+- [ ] Add preflight checks that reject missing or nonlocal resource/backend endpoints
+  and inherited real credentials for the local path. Fail without falling back to AWS.
+- [ ] Pin and record Floci, Terraform, Terragrunt, Terramate, provider, module and
+  image versions. Check the exact API operations used by those module revisions;
+  a service appearing in Floci's support list does not establish scenario compatibility.
+- [ ] Establish a small disposable resource smoke test through Terramate and
+  Terragrunt to verify endpoint targeting, state isolation and cleanup before
+  attempting the complete application scenario.
+- [ ] Configure Docker-backed execution for workload tests. Document Docker socket,
+  image architecture, networking, listener-port and hostname requirements. Keep
+  API-only/mock results separate from actual container execution evidence.
+- [ ] Document module/image downloads and other network prerequisites. Local
+  infrastructure provisioning does not imply an entirely offline workflow.
+- [ ] Publish a local quickstart and compatibility matrix, including unsupported
+  operations, environment-specific settings and checks reserved for AWS.
+
+Acceptance: a fresh checkout can start the pinned emulator and create, inspect and
+remove the smoke-test resource through the real toolchain using isolated local state.
+Missing emulator configuration fails locally instead of targeting AWS.
+
+References: [Floci Terraform setup](https://github.com/floci-io/floci/blob/main/docs/getting-started/terraform.md),
+[ECS runtime](https://floci.io/floci/services/ecs/),
+[Terramate orchestration](https://terramate.io/docs/cli/orchestration/run-commands-in-stacks).
+Recheck support against the pinned versions during implementation.
+
+## 6. Make cost and security reporting dependable
 
 Complexity: moderate. Depends on milestones 3 and 4.
 
@@ -160,13 +209,16 @@ Complexity: moderate. Depends on milestones 3 and 4.
   define artifact retention and keep sensitive plan content out of public comments.
 - [ ] Exercise multiple-stack reports, no-change runs, a deliberate critical
   finding, scanner failure, missing credentials and invalid report input.
+- [ ] Exercise report collection with plans from the Floci path where supported.
+  Label cost estimates as projections for the modeled AWS configuration, not local
+  runtime costs or evidence of an AWS deployment. Record any external API requirements.
 
 Acceptance: a missing or broken check cannot look like a clean result, and the PR
 contains an attributable cost/security report for every selected component.
 
 Related: [cost documentation](COST.md), [workflows](../.github/workflows/).
 
-## 6. Establish safe access and deployment boundaries
+## 7. Establish safe access and deployment boundaries
 
 Complexity: moderate to high. Required before AWS lifecycle exercises.
 
@@ -196,9 +248,9 @@ are denied, and concurrent requests do not create overlapping infrastructure cha
 
 Related: [IAM setup](IAM.md), [AWS authentication action](../.github/actions/setup-aws/action.yaml).
 
-## 7. Make state bootstrap and cleanup reproducible
+## 8. Make state bootstrap and cleanup reproducible
 
-Complexity: moderate to high. Depends on milestones 4 and 6.
+Complexity: moderate to high. Depends on milestones 4 and 7.
 
 - [ ] Parameterize backend setup by account, region and environment. The current
   bootstrap targets `us-west-1`, while component backends also require `us-east-1`.
@@ -215,15 +267,83 @@ Complexity: moderate to high. Depends on milestones 4 and 6.
   including global failover resources before their regional dependencies.
 - [ ] Preserve backend/audit resources deliberately and identify them in cleanup
   reports so intentional retention is distinguishable from leaked workloads.
+- [ ] If adding a Floci-backed S3/locking profile, provision its backend separately,
+  configure backend service endpoints explicitly and test persistence across emulator
+  restarts. Keep emulator results separate from AWS locking, audit and recovery evidence.
 
 Acceptance: a fresh account/region can initialize every required backend; rerunning
 setup is safe; locking, state recovery and workload cleanup have recorded evidence.
 
 Related: [bootstrap script](../bootstrap/setup-backend.sh), [root configuration](../root.hcl).
 
-## 8. Automate a complete single-region lifecycle
+## 9. Automate local provisioning, drift and reconciliation loops
 
-Complexity: high. Depends on milestones 2–7.
+Complexity: high. Depends on milestones 2–5. Use milestone 6 for report integration;
+start with local state while AWS-specific work in milestones 7 and 8 remains pending.
+
+- [ ] Build a single-region local scenario from the same supported networking,
+  ECS cluster and application modules used by AWS. Begin with Service A; add
+  Service B and monitoring only after their emulator compatibility is established.
+- [ ] Reuse a released workload from `applications` with an explicit health endpoint
+  and release identity. Keep local differences in environment configuration.
+- [ ] Provision through Terramate in dependency order with real outputs. Assert
+  expected resource configuration and relationships through the local AWS API.
+- [ ] Verify running containers and reach release A through the provisioned
+  application/load-balancer endpoint. Check target health separately; a successful
+  HTTP response alone does not establish that health checks passed.
+- [ ] Make an intended configuration adjustment, such as release A to B or replica
+  count. Assert the selected stacks, inspect the plan, apply and verify the resulting
+  application release, capacity and health. Exercise the supported rollback path.
+- [ ] Confirm a second refreshed plan has no unexpected changes before injecting
+  drift. Keep configuration changes and out-of-band changes as separate test cases.
+- [ ] Inject controlled drift through the Floci AWS-compatible API/CLI, such as
+  changing a Terraform-managed ECS desired count. Confirm that actual emulator state
+  changed without editing configuration or Terraform state.
+- [ ] Run a Terramate-orchestrated drift scan using a refreshed Terragrunt plan.
+  Assert the affected stack and expected diff; distinguish no changes, drift and
+  command errors using the tool's detailed exit-code behavior.
+- [ ] Implement a bounded reconciliation driver for explicitly selected disposable
+  local stacks: inspect drift → create a fresh correction plan → apply → wait for
+  runtime convergence → replan. Terramate runs these commands; the driver or CI
+  schedule supplies the loop rather than assuming a continuously running controller.
+- [ ] Limit retries and total duration, preserve diagnostics and fail on unresolved
+  drift. Verify another iteration after convergence makes no changes. Include a
+  failed correction or unavailable emulator case so failure cannot appear successful.
+- [ ] Perform final verification of application behavior, release, resource settings,
+  target health, stack scope and a clean refreshed plan. Preserve the pre-cleanup
+  result before destroying anything.
+- [ ] Destroy in dependency order and verify removal through both the emulator API
+  and Docker runtime. Check for remaining owned containers, resources and listeners;
+  document deliberate backend or emulator persistence separately.
+- [ ] Repeat from a clean fixture and run the lifecycle in CI with isolated emulator
+  data, state and port allocation. Upload selected-stack lists, plans/results, runtime
+  assertions and cleanup evidence without sensitive state or plan content.
+- [ ] Add optional Terramate Cloud synchronization for deployment/drift results.
+  Verify the integration with plans produced against Floci, use distinct local stack
+  IDs and label the environment clearly. Keep core local tests independent of Cloud
+  login, internet access and sync availability.
+- [ ] Reuse component contracts and applicable assertions from `deploy-ecs-blueprint`
+  while keeping this repository's tests focused on orchestration, change selection,
+  drift and reconciliation. Avoid a second competing module implementation.
+
+Acceptance: start Floci → provision → verify A → adjust → verify B → converge →
+inject drift → detect → reconcile within bounds → verify behavior and clean plan →
+destroy → verify API/runtime cleanup. A repeated run produces attributable results
+for the pinned toolchain, including the expected failure cases.
+
+Record API-only, Docker-runtime and AWS results separately. Floci success does not
+establish AWS IAM/OIDC enforcement, VPC/security-group isolation, Fargate availability,
+regional resilience or public Route 53 health-based failover. Document supported
+local behavior and any accommodations without changing the intended AWS architecture
+solely to satisfy the emulator.
+
+References: [Floci ELB behavior](https://floci.io/floci/services/elb/),
+[Route 53 limitations](https://floci.io/floci/services/route53/),
+[Terramate Cloud synchronization](https://terramate.io/docs/get-started/terragrunt).
+
+## 10. Automate a complete AWS single-region lifecycle
+
+Complexity: high. Depends on milestones 2–9 for the supported scenario.
 
 - [ ] Document prerequisites, credentials, DNS, IAM, backend setup and one supported
   development command path. Make manual steps explicit and check readiness.
@@ -240,13 +360,16 @@ Complexity: high. Depends on milestones 2–7.
 - [ ] Add bounded waits, failure diagnostics and cleanup handling to the harness.
 - [ ] Record revision, versions, account/region, durations, costs/assumptions and
   results. Keep fast checks separate from tests that require real AWS.
+- [ ] Reuse the applicable local lifecycle assertions from milestone 9 with AWS
+  endpoint discovery and credentials. Record AWS-specific differences and pending
+  checks explicitly; local success must not automatically mark AWS validation passed.
 
 Acceptance: provision → verify A → update → verify B → rollback → converge → destroy
 can be repeated from the documented starting point with inspectable results.
 
-## 9. Prove drift detection and change impact
+## 11. Prove AWS drift detection and change impact
 
-Complexity: high. Depends on milestones 2, 3 and 8.
+Complexity: high. Depends on milestones 2, 3, 9 and 10.
 
 - [ ] Run the corrected drift selections against supported stacks and sync results
   to Terramate Cloud. Confirm global resources are included as intended.
@@ -262,13 +385,16 @@ Complexity: high. Depends on milestones 2, 3 and 8.
   establish that every affected dependent stack is included.
 - [ ] Document the Git comparison base and behavior for multi-commit pushes, merges
   and retries. Ensure an earlier failed deployment can be retried deliberately.
+- [ ] Reuse the local drift assertions against a disposable AWS scenario. Keep
+  unattended reconciliation limited to the local fixture until an explicit AWS
+  reconciliation policy and authorization boundary are implemented and verified.
 
 Acceptance: a known drift event is detected and reconciled, and a small change-impact
 matrix demonstrates which stacks are selected and why.
 
-## 10. Prove two-region failover and failback
+## 12. Prove two-region failover and failback
 
-Complexity: high. Depends on milestones 4, 7 and 8.
+Complexity: high. Depends on milestones 4, 8 and 10.
 
 - [ ] Deploy the same application release and compatible health configuration in
   both regions. Include region and release identity in an inspectable response.
@@ -293,7 +419,7 @@ safe restoration and measured results tied to a specific release.
 
 Related: [recovery walkthrough](../enterprise/DR.md), [DR script](../enterprise/scripts/dr-test.sh).
 
-## 11. Demonstrate real account isolation and promotion
+## 13. Demonstrate real account isolation and promotion
 
 Complexity: very high. Depends on a stable lifecycle and access/state boundaries.
 
@@ -311,7 +437,7 @@ Acceptance: one release is deployed through two independently controlled account
 boundaries, with positive and negative access evidence. Folder names alone do not
 count as isolation or a production operating history.
 
-## 12. Validate scale and consolidate the portfolio story
+## 14. Validate scale and consolidate the portfolio story
 
 Complexity: very high for scale testing; documentation can evolve throughout.
 
@@ -321,12 +447,15 @@ Complexity: very high for scale testing; documentation can evolve throughout.
   `deploy-ecs-blueprint`. Reuse tested components through explicit releases and
   contracts rather than maintaining competing copies.
 - [ ] Measure discovery, selection and ordering with generated stack fixtures.
-  Separate orchestration measurements from real AWS deployment measurements.
+  Separate orchestration, Floci runtime and real AWS deployment measurements.
 - [ ] Exercise bounded parallelism, partial failures and retries at an intentional
   scale. Record runner load, API limits, state contention and operational costs.
 - [ ] Claim support for hundreds of components only within the measured scope.
 - [ ] Build a short walkthrough: tested application → released image → reviewed
   infrastructure change → deployment → drift → recovery → cleanup.
+- [ ] Publish a reproducible local demonstration showing provisioning, an intended
+  adjustment, injected drift, bounded reconciliation, final verification and cleanup.
+  Show the actual Terramate commands and optional Cloud records, clearly labeled local.
 - [ ] Retain useful architecture images and recordings, and add links to code,
   workflow runs and dated validation records. Identify personal contributions.
 - [ ] Update Automata Life with measured deployment, drift and recovery outcomes,
